@@ -697,15 +697,16 @@ function handleSearch() {
       
       // Use filters with OR condition to search across multiple fields including mobile_no
       // This ensures mobile number is included in the search
-      viewControls.value.list.params.filters = {
-        converted: 0,
-        or: [
+      // Frappe uses a specific format for OR conditions
+      viewControls.value.list.params.filters = [
+        ['converted', '=', 0],
+        ['', 'or', [
           ['lead_name', 'like', `%${searchTerm}%`],
           ['email', 'like', `%${searchTerm}%`],
           ['mobile_no', 'like', `%${searchTerm}%`],
           ['organization', 'like', `%${searchTerm}%`],
-        ]
-      }
+        ]]
+      ]
       
       // Also add txt parameter as fallback for general search
       viewControls.value.list.params.txt = searchTerm
