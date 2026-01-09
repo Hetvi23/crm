@@ -32,30 +32,39 @@ def after_install(force=False):
 
 def add_default_lead_statuses():
 	"""Add default lead statuses. Uses SQL inserts to avoid controller loading issues."""
+	# Custom statuses as requested by user
 	statuses = {
-		"New": {
-			"color": "gray",
+		"Intake": {
+			"color": "blue",
 			"position": 1,
 		},
 		"Contacted": {
-			"color": "orange",
+			"color": "cyan",
 			"position": 2,
 		},
-		"Nurture": {
-			"color": "blue",
+		"Qualified": {
+			"color": "teal",
 			"position": 3,
 		},
-		"Qualified": {
-			"color": "green",
+		"Demo Scheduled": {
+			"color": "amber",
 			"position": 4,
 		},
-		"Unqualified": {
-			"color": "red",
+		"Demo Completed": {
+			"color": "yellow",
 			"position": 5,
 		},
-		"Junk": {
-			"color": "purple",
+		"Converted": {
+			"color": "green",
 			"position": 6,
+		},
+		"Not qualified": {
+			"color": "orange",
+			"position": 7,
+		},
+		"Lost": {
+			"color": "red",
+			"position": 8,
 		},
 	}
 
