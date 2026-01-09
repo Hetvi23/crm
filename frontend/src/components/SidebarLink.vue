@@ -1,12 +1,13 @@
 <template>
   <button
-    class="flex h-7 cursor-pointer items-center rounded text-ink-gray-7 duration-300 ease-in-out focus:outline-none focus:transition-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-outline-gray-3"
-    :class="isActive ? 'bg-surface-selected shadow-sm' : 'hover:bg-surface-gray-2'"
+    class="flex h-9 cursor-pointer items-center rounded-lg text-[#050505] duration-200 ease-in-out focus:outline-none transition-colors"
+    :class="isActive ? 'bg-[#E7F3FF] font-semibold' : 'hover:bg-[#F2F3F5]'"
+    style="font-size: 15px;"
     @click="handleClick"
   >
     <div
       class="flex w-full items-center justify-between duration-300 ease-in-out"
-      :class="isCollapsed ? 'ml-[3px] p-1' : 'px-2 py-1'"
+      :class="isCollapsed ? 'ml-[3px] p-1.5' : 'px-3 py-1.5'"
     >
       <div class="flex items-center truncate">
         <Tooltip :text="label" placement="right" :disabled="!isCollapsed">
@@ -15,9 +16,13 @@
               <FeatherIcon
                 v-if="typeof icon == 'string'"
                 :name="icon"
-                class="size-4 text-ink-gray-7"
+                :class="['size-5', isActive ? 'text-[#1877F2]' : 'text-[#65676B]']"
               />
-              <component v-else :is="icon" class="size-4 text-ink-gray-7" />
+              <component 
+                v-else 
+                :is="icon" 
+                :class="['size-5', isActive ? 'text-[#1877F2]' : 'text-[#65676B]']" 
+              />
             </span>
           </slot>
         </Tooltip>
@@ -28,12 +33,14 @@
           :hoverDelay="1.5"
         >
           <span
-            class="flex-1 flex-shrink-0 truncate text-sm duration-300 ease-in-out"
-            :class="
+            class="flex-1 flex-shrink-0 truncate duration-300 ease-in-out"
+            :class="[
               isCollapsed
                 ? 'ml-0 w-0 overflow-hidden opacity-0'
-                : 'ml-2 w-auto opacity-100'
-            "
+                : 'ml-3 w-auto opacity-100',
+              isActive ? 'text-[#1877F2]' : 'text-[#050505]'
+            ]"
+            style="font-size: 15px; font-weight: 500;"
           >
             {{ label }}
           </span>

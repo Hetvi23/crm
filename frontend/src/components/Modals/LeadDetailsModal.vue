@@ -57,6 +57,16 @@
               </label>
               <div class="text-base">{{ leadData.job_title || leadData.custom_designation || '-' }}</div>
             </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-ink-gray-7 mb-1">
+                {{ __('City') }}
+              </label>
+              <div class="text-base flex items-center gap-1.5">
+                <FeatherIcon name="map-pin" class="h-4 w-4 text-blue-primary" />
+                <span>{{ leadData.city || '-' }}</span>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -127,7 +137,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { Dialog, Badge, Button, LoadingIndicator, call } from 'frappe-ui'
+import { Dialog, Badge, Button, LoadingIndicator, call, FeatherIcon } from 'frappe-ui'
 import { useRouter, useRoute } from 'vue-router'
 
 const props = defineProps({

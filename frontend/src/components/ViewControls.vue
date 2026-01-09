@@ -447,6 +447,43 @@ const view = ref({
 const pageLength = computed(() => list.value?.data?.page_length)
 const pageLengthCount = computed(() => list.value?.data?.page_length_count)
 
+// Shared helper function to normalize kanban_fields to JSON array format
+function normalizeKanbanFields(fields) {
+  if (!fields || fields === '') return '[]'
+  
+  // Clean the string - remove any extra whitespace
+  const cleaned = String(fields).trim()
+  
+  // If it's already a valid JSON array string, parse and re-stringify to ensure clean format
+  if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(cleaned)
+      if (Array.isArray(parsed)) {
+        // Re-stringify to ensure clean format without extra data
+        return JSON.stringify(parsed)
+      }
+    } catch (e) {
+      // Not valid JSON, continue to process
+      console.warn('Failed to parse kanban_fields as JSON:', e)
+    }
+  }
+  
+  // Try to parse as JSON
+  let fieldsArray = []
+  try {
+    fieldsArray = JSON.parse(cleaned)
+    if (!Array.isArray(fieldsArray)) {
+      throw new Error('Not an array')
+    }
+  } catch (e) {
+    // If not JSON, treat as comma-separated string
+    fieldsArray = cleaned.split(',').map(f => f.trim()).filter(f => f)
+  }
+  
+  // Always return as clean JSON string
+  return JSON.stringify(fieldsArray)
+}
+
 watch(loadMore, (value) => {
   if (!value) return
   updatePageLength(value, true)
@@ -465,7 +502,9 @@ watch(updatedPageCount, (value) => {
 function getParams() {
   let _view = getView(route.query.view, route.params.viewType, props.doctype)
   const view_name = _view?.name || ''
-  const view_type = _view?.type || route.params.viewType || 'list'
+  // Default to kanban for CRM Lead if no view type is specified
+  const defaultViewType = props.doctype === 'CRM Lead' ? 'kanban' : 'list'
+  const view_type = _view?.type || route.params.viewType || defaultViewType
   const filters = (_view?.filters && JSON.parse(_view.filters)) || {}
   const order_by = _view?.order_by || 'modified desc'
   const group_by_field = _view?.group_by_field || 'owner'
@@ -474,7 +513,25 @@ function getParams() {
   const column_field = _view?.column_field || 'status'
   const title_field = _view?.title_field || ''
   const kanban_columns = _view?.kanban_columns || ''
-  const kanban_fields = _view?.kanban_fields || ''
+  let kanban_fields = _view?.kanban_fields || ''
+  
+  // Always include city field for CRM Lead doctype in kanban view
+  if (props.doctype === 'CRM Lead' && view_type === 'kanban') {
+    // Normalize first
+    const normalized = normalizeKanbanFields(kanban_fields)
+    let fieldsArray = JSON.parse(normalized)
+    
+    // Ensure city is included
+    if (!fieldsArray.includes('city')) {
+      fieldsArray.push('city')
+    }
+    
+    // Convert back to JSON string format (backend expects JSON)
+    kanban_fields = JSON.stringify(fieldsArray)
+  } else {
+    // Normalize even if not CRM Lead
+    kanban_fields = normalizeKanbanFields(kanban_fields)
+  }
 
   view.value = {
     name: view_name,
@@ -496,6 +553,10 @@ function getParams() {
     public: _view?.public || false,
   }
 
+  // Always include city field for CRM Lead doctype in kanban view
+  // kanban_fields is already normalized above, just use it directly
+  let final_kanban_fields = kanban_fields
+  
   return {
     doctype: props.doctype,
     filters: filters,
@@ -509,7 +570,7 @@ function getParams() {
     column_field: column_field,
     title_field: title_field,
     kanban_columns: kanban_columns,
-    kanban_fields: kanban_fields,
+    kanban_fields: final_kanban_fields,
     columns: columns,
     rows: rows,
     page_length: pageLength.value,
@@ -537,7 +598,7 @@ list.value = createResource({
       column_field: data.column_field,
       title_field: data.title_field,
       kanban_columns: data.kanban_columns,
-      kanban_fields: data.kanban_fields,
+      kanban_fields: data.kanban_fields ? normalizeKanbanFields(data.kanban_fields) : '[]',
       columns: data.columns,
       rows: data.rows,
       page_length: params.page_length,
@@ -964,8 +1025,10 @@ async function updateKanbanSettings(data) {
     view.value.kanban_columns = data.kanban_columns
   }
   if (data.kanban_fields) {
-    list.value.params.kanban_fields = data.kanban_fields
-    view.value.kanban_fields = data.kanban_fields
+    // Normalize kanban_fields before setting to ensure clean JSON format
+    const normalized = normalizeKanbanFields(data.kanban_fields)
+    list.value.params.kanban_fields = normalized
+    view.value.kanban_fields = normalized
   }
   if (data.column_field && data.column_field != view.value.column_field) {
     list.value.params.column_field = data.column_field
@@ -1001,7 +1064,9 @@ function loadMoreKanban(columnName) {
   }
   list.value.params.kanban_columns = columns
   view.value.kanban_columns = columns
-  list.value.reload()
+  
+  // Reload - loading state will be managed by KanbanView component
+  return list.value.reload()
 }
 
 function createOrUpdateStandardView() {

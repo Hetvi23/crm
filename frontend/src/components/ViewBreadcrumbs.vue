@@ -2,18 +2,20 @@
   <div class="flex items-center">
     <router-link
       :to="{ name: routeName }"
-      class="px-0.5 py-1 text-lg font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
+      class="px-0.5 py-1 font-semibold focus:outline-none transition-colors"
+      style="font-size: 20px; color: #050505;"
       :class="[
         viewControls
-          ? 'text-ink-gray-5 hover:text-ink-gray-7'
-          : 'text-ink-gray-7',
+          ? 'hover:text-[#1877F2]'
+          : '',
       ]"
     >
       {{ __(routeName) }}
     </router-link>
     <span
       v-if="viewControls"
-      class="mx-0.5 text-base text-ink-gray-4"
+      class="mx-1 text-base"
+      style="color: #65676B;"
       aria-hidden="true"
     >
       /

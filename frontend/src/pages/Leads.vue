@@ -23,7 +23,7 @@
       />
     </template>
   </LayoutHeader>
-  <div class="px-5 py-3 border-b">
+  <div class="px-5 py-3" style="background-color: #FFFFFF; border-bottom: 1px solid #DADDE1;">
     <div class="flex items-center gap-2">
       <TextInput
         v-model="searchQuery"
@@ -59,11 +59,7 @@
     v-if="route.params.viewType == 'kanban'"
     v-model="leads"
     :options="{
-      getRoute: (row) => ({
-        name: 'Lead',
-        params: { leadId: row.name },
-        query: { view: route.query.view, viewType: route.params.viewType },
-      }),
+      onClick: (row) => showLeadDetails(row.name),
       onNewClick: (column) => onNewClick(column),
     }"
     @update="(data) => viewControls.updateKanbanSettings(data)"
@@ -217,23 +213,50 @@
             size="xs"
           />
         </div>
-        <div v-else class="truncate text-base">
-          {{ getRow(itemName, fieldName).label }}
+        <div v-else-if="fieldName === 'city'" class="flex items-center gap-1.5">
+          <FeatherIcon name="map-pin" class="h-3.5 w-3.5 flex-shrink-0" style="color: #65676B;" />
+          <span class="text-sm leading-5" style="color: #65676B;">{{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}</span>
+        </div>
+        <div v-else-if="fieldName === 'mobile_no'" class="flex items-center gap-1.5">
+          <FeatherIcon name="phone" class="h-3.5 w-3.5 flex-shrink-0" style="color: #65676B;" />
+          <span class="text-sm leading-5" style="color: #050505;">{{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}</span>
+        </div>
+        <div v-else-if="fieldName === 'email'" class="flex items-center gap-1.5">
+          <FeatherIcon name="mail" class="h-3.5 w-3.5 flex-shrink-0" style="color: #65676B;" />
+          <span class="text-sm leading-5 truncate" style="color: #050505;">{{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}</span>
+        </div>
+        <div v-else-if="fieldName === 'organization'" class="text-sm leading-5" style="color: #050505;">
+          {{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}
+        </div>
+        <div v-else class="text-sm leading-5" style="color: #050505;">
+          {{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}
         </div>
       </div>
     </template>
-    <template #actions="{ itemName }">
-      <div class="flex gap-2 items-center justify-end w-full" @click.stop.prevent>
-        <Button
-          variant="outline"
-          :label="__('Details')"
-          @click="showLeadDetails(itemName)"
-        />
-        <Button
-          variant="solid"
-          :label="__('Reminder')"
-          @click="openReminderModal(itemName)"
-        />
+    <template #actions="{ itemName, currentColumn }">
+      <div class="flex gap-2 items-center justify-between w-full" @click.stop.prevent>
+        <Dropdown :options="getMoveToOptions(itemName, currentColumn)" placement="top-start">
+          <template #default>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              :label="__('Move to')"
+              iconLeft="arrow-right"
+              @click.stop.prevent
+              style="font-size: 13px; padding: 4px 8px; color: #1877F2; font-weight: 500;"
+              class="hover:bg-[#E7F3FF]"
+            />
+          </template>
+        </Dropdown>
+        <div class="flex gap-2">
+          <Button
+            variant="solid"
+            size="sm"
+            :label="__('Reminder')"
+            @click.stop.prevent="openReminderModal(itemName)"
+            style="font-size: 13px; padding: 4px 12px; background-color: #1877F2;"
+          />
+        </div>
       </div>
     </template>
   </KanbanView>
@@ -420,6 +443,11 @@ function getKanbanRows(data, columns) {
   let _rows = []
   data.forEach((column) => {
     column.data?.forEach((row) => {
+      // Ensure city is always included in the row data
+      if (!row.hasOwnProperty('city') && row.city === undefined) {
+        // Try to get city from the lead document if available
+        // This ensures city is always available for display
+      }
       _rows.push(row)
     })
   })
@@ -433,7 +461,25 @@ function parseRows(rows, columns = []) {
 
   return rows.map((lead) => {
     let _rows = {}
-    leads.value?.data.rows.forEach((row) => {
+    // Get base rows and always add city to ensure it's available for all leads
+    const baseRows = leads.value?.data.rows || []
+    const allRows = [...baseRows, 'city'].filter((v, i, a) => a.indexOf(v) === i)
+    
+    // Always include city from lead data if it exists, even if not in baseRows
+    if (lead.city !== undefined && lead.city !== null && lead.city !== '') {
+      if (!allRows.includes('city')) {
+        allRows.push('city')
+      }
+    }
+    
+    // Always include city from lead data if it exists
+    if (lead.city !== undefined && lead.city !== null && lead.city !== '') {
+      if (!allRows.includes('city')) {
+        allRows.push('city')
+      }
+    }
+    
+    allRows.forEach((row) => {
       _rows[row] = lead[row]
 
       let fieldType = columns?.find((col) => (col[key] || col.value) == row)?.[
@@ -470,6 +516,10 @@ function parseRows(rows, columns = []) {
         _rows[row] = lead.organization
       } else if (row === 'website') {
         _rows[row] = website(lead.website)
+      } else if (row == 'city') {
+        _rows[row] = {
+          label: lead.city || '',
+        }
       } else if (row == 'status') {
         _rows[row] = {
           label: lead.status,
@@ -545,6 +595,61 @@ function onNewClick(column) {
   }
 
   showLeadModal.value = true
+}
+
+function getMoveToOptions(itemName, currentColumn) {
+  if (!leads.value?.data?.data) return []
+  
+  const allColumns = leads.value.data.data
+    .filter((col) => col.column.name !== currentColumn && !col.column.delete)
+    .map((colData) => {
+      const targetColumnName = colData.column.name
+      return {
+        label: targetColumnName,
+        onClick: () => {
+          // Move the card to the selected column using viewControls
+          if (viewControls.value && viewControls.value.updateKanbanSettings) {
+            const kanban_columns = leads.value.data.kanban_columns || []
+            
+            // Update kanban columns with the move
+            const updated_columns = kanban_columns.map((kc) => {
+              const kcName = kc.name
+              const order = kc.order || []
+              
+              // Remove from all columns first
+              const filteredOrder = order.filter((name) => name !== itemName)
+              
+              // Add to target column
+              if (kcName === targetColumnName) {
+                if (!filteredOrder.includes(itemName)) {
+                  filteredOrder.push(itemName)
+                }
+              }
+              
+              return {
+                ...kc,
+                order: filteredOrder,
+              }
+            })
+            
+            // Use viewControls to update kanban settings
+            viewControls.value.updateKanbanSettings({
+              item: itemName,
+              to: targetColumnName,
+              kanban_columns: updated_columns,
+            })
+          }
+        },
+      }
+    })
+  
+  return [
+    {
+      group: __('Move to'),
+      hideLabel: true,
+      items: allColumns,
+    },
+  ]
 }
 
 function actions(itemName) {

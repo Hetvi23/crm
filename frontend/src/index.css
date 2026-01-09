@@ -1,5 +1,104 @@
 @import 'frappe-ui/style.css';
 
+/* Meta-style Design System */
+@layer base {
+  * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.3333;
+    color: #050505;
+    background-color: #F0F2F5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Meta-style typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: #050505;
+    line-height: 1.2;
+  }
+
+  /* Meta-style scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #BCC0C4;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #8A8D91;
+  }
+
+  /* Override frappe-ui button styles to match Meta */
+  button[class*="btn-"], .btn {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  /* Meta-style inputs */
+  input[type="text"], 
+  input[type="email"], 
+  input[type="password"],
+  input[type="search"],
+  textarea,
+  select {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    border-radius: 6px;
+  }
+
+  /* Meta-style text colors */
+  .text-ink-gray-9, .text-ink-gray-8, .text-ink-gray-7 {
+    color: #050505 !important;
+  }
+
+  .text-ink-gray-6, .text-ink-gray-5, .text-ink-gray-4 {
+    color: #65676B !important;
+  }
+
+  /* Meta-style tables */
+  table {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+  }
+
+  /* Meta-style modals */
+  [role="dialog"], .modal {
+    border-radius: 8px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+    border: 1px solid #DADDE1;
+  }
+
+  /* Meta-style cards */
+  .card, [class*="card"] {
+    background: #FFFFFF;
+    border-radius: 8px;
+    border: 1px solid #DADDE1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Meta-style borders */
+  .border, [class*="border"] {
+    border-color: #DADDE1 !important;
+  }
+}
+
 @layer components {
   .prose-f {
     @apply break-all
@@ -20,5 +119,44 @@
 			prose-th:border-outline-gray-2
 			prose-th:p-2
 			prose-th:relative;
+  }
+
+  /* Meta-style card */
+  .meta-card {
+    background: #FFFFFF;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border: 1px solid #DADDE1;
+  }
+
+  /* Meta-style button */
+  .meta-button-primary {
+    background: #1877F2;
+    color: #FFFFFF;
+    border-radius: 6px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border: none;
+    transition: background-color 0.2s;
+  }
+
+  .meta-button-primary:hover {
+    background: #166FE5;
+  }
+
+  /* Meta-style input */
+  .meta-input {
+    background: #F0F2F5;
+    border: 1px solid #DADDE1;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 15px;
+    color: #050505;
+  }
+
+  .meta-input:focus {
+    background: #FFFFFF;
+    border-color: #1877F2;
+    outline: none;
   }
 }

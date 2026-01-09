@@ -296,7 +296,55 @@ def get_data(
 	filters = frappe._dict(filters)
 	rows = frappe.parse_json(rows or "[]")
 	columns = frappe.parse_json(columns or "[]")
-	kanban_fields = frappe.parse_json(kanban_fields or "[]")
+	
+	# Handle kanban_fields - clean and parse safely
+	if kanban_fields:
+		# Clean the string - remove any extra whitespace or characters
+		kanban_fields = str(kanban_fields).strip()
+		# If it looks like JSON, try to extract just the JSON part
+		if kanban_fields.startswith('['):
+			# Find the end of the JSON array by counting brackets
+			bracket_count = 0
+			json_end = 0
+			for i, char in enumerate(kanban_fields):
+				if char == '[':
+					bracket_count += 1
+				elif char == ']':
+					bracket_count -= 1
+					if bracket_count == 0:
+						json_end = i + 1
+						break
+			# Extract only the JSON part (up to the closing bracket)
+			if json_end > 0:
+				kanban_fields = kanban_fields[:json_end]
+			else:
+				# If we can't find the end, try to parse what we have
+				# and if it fails, default to empty array
+				try:
+					import json
+					json.loads(kanban_fields)
+				except:
+					kanban_fields = "[]"
+		else:
+			# Not JSON format, try to parse as comma-separated or default to empty
+			try:
+				# Try parsing as comma-separated string
+				fields_list = [f.strip() for f in kanban_fields.split(',') if f.strip()]
+				kanban_fields = json.dumps(fields_list)
+			except:
+				kanban_fields = "[]"
+	
+	# Parse kanban_fields with error handling
+	try:
+		kanban_fields = frappe.parse_json(kanban_fields or "[]")
+	except Exception as e:
+		frappe.log_error(
+			message=f"Error parsing kanban_fields: {str(e)}\nValue received: {repr(kanban_fields)}",
+			title="Kanban Fields Parse Error"
+		)
+		# Default to empty array if parsing fails
+		kanban_fields = []
+	
 	kanban_columns = frappe.parse_json(kanban_columns or "[]")
 
 	custom_view_name = view.get("custom_view_name") if view else None
@@ -435,6 +483,10 @@ def get_data(
 		for field in kanban_fields:
 			if field not in rows:
 				rows.append(field)
+		
+		# Always include city field for CRM Lead doctype in kanban view
+		if doctype == "CRM Lead" and "city" not in rows:
+			rows.append("city")
 
 		# Build or_filters for text search in kanban view
 		or_filters = []

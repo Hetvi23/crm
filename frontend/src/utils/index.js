@@ -375,30 +375,61 @@ export function copyToClipboard(text) {
 }
 
 export const colors = [
-  'gray',
+  'slate',
   'blue',
-  'green',
-  'red',
-  'pink',
-  'orange',
+  'emerald',
+  'rose',
+  'fuchsia',
   'amber',
-  'yellow',
-  'cyan',
+  'sky',
+  'lime',
+  'indigo',
   'teal',
   'violet',
-  'purple',
-  'black',
+  'pink',
+  'orange',
 ]
 
 export function parseColor(color) {
-  let textColor = `!text-${color}-600`
-  if (color == 'black') {
-    textColor = '!text-ink-gray-9'
-  } else if (['gray', 'green'].includes(color)) {
-    textColor = `!text-${color}-700`
+  // Map colors to minimalistic light tones
+  const colorMap = {
+    'slate': '!text-slate-500',
+    'blue': '!text-blue-400',
+    'emerald': '!text-emerald-400',
+    'rose': '!text-rose-400',
+    'fuchsia': '!text-fuchsia-400',
+    'amber': '!text-amber-400',
+    'sky': '!text-sky-400',
+    'lime': '!text-lime-500',
+    'indigo': '!text-indigo-400',
+    'teal': '!text-teal-400',
+    'violet': '!text-violet-400',
+    'pink': '!text-pink-400',
+    'orange': '!text-orange-400',
   }
+  
+  return colorMap[color] || `!text-${color}-400`
+}
 
-  return textColor
+export function parseColorBg(color) {
+  // Map colors to stronger but still minimalistic background tones
+  const bgColorMap = {
+    'slate': 'bg-slate-100',
+    'blue': 'bg-blue-100',
+    'emerald': 'bg-emerald-100',
+    'rose': 'bg-rose-100',
+    'fuchsia': 'bg-fuchsia-100',
+    'amber': 'bg-amber-100',
+    'sky': 'bg-sky-100',
+    'lime': 'bg-lime-100',
+    'indigo': 'bg-indigo-100',
+    'teal': 'bg-teal-100',
+    'violet': 'bg-violet-100',
+    'pink': 'bg-pink-100',
+    'orange': 'bg-orange-100',
+  }
+  
+  return bgColorMap[color] || `bg-${color}-100`
 }
 
 export function isEmoji(str) {

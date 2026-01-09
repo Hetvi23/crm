@@ -23,6 +23,14 @@ const routes = [
     path: '/leads/view/:viewType?',
     name: 'Leads',
     component: () => import('@/pages/Leads.vue'),
+    beforeEnter: (to, from, next) => {
+      // Default to kanban view if no viewType is specified
+      if (!to.params.viewType) {
+        next({ name: 'Leads', params: { viewType: 'kanban' }, query: to.query })
+      } else {
+        next()
+      }
+    },
   },
   {
     path: '/leads/:leadId',
@@ -152,7 +160,7 @@ router.beforeEach(async (to, from, next) => {
 
     let defaultView = getDefaultView()
     if (!defaultView) {
-      next({ name: 'Leads' })
+      next({ name: 'Leads', params: { viewType: 'kanban' } })
       return
     }
 
