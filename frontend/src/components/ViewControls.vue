@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="isMobileView"
+    v-if="isMobileView && !options.hideActionButtons"
     class="flex flex-col justify-between gap-2 sm:px-5 px-3 py-4"
   >
     <div class="flex flex-col gap-2">
@@ -154,7 +154,7 @@
         <Button :label="__('Cancel')" @click="cancelChanges" />
         <Button :label="__('Save Changes')" @click="saveView" />
       </div>
-      <div class="flex items-center gap-2">
+      <div v-if="!options.hideActionButtons" class="flex items-center gap-2">
         <Button
           :tooltip="__('Refresh')"
           :icon="RefreshIcon"
@@ -355,6 +355,7 @@ const props = defineProps({
     type: Object,
     default: {
       hideColumnsButton: false,
+      hideActionButtons: false,
       defaultViewName: '',
       allowedViews: ['list'],
     },
@@ -506,7 +507,8 @@ function getParams() {
   const defaultViewType = props.doctype === 'CRM Lead' ? 'kanban' : 'list'
   const view_type = _view?.type || route.params.viewType || defaultViewType
   const filters = (_view?.filters && JSON.parse(_view.filters)) || {}
-  const order_by = _view?.order_by || 'modified desc'
+  // For kanban views, default to creation desc (newest first) so new items appear at top
+  const order_by = _view?.order_by || (view_type === 'kanban' ? 'creation desc' : 'modified desc')
   const group_by_field = _view?.group_by_field || 'owner'
   const columns = _view?.columns || ''
   const rows = _view?.rows || ''
@@ -515,16 +517,18 @@ function getParams() {
   const kanban_columns = _view?.kanban_columns || ''
   let kanban_fields = _view?.kanban_fields || ''
   
-  // Always include city field for CRM Lead doctype in kanban view
+  // Always include required fields for CRM Lead doctype in kanban view
   if (props.doctype === 'CRM Lead' && view_type === 'kanban') {
     // Normalize first
     const normalized = normalizeKanbanFields(kanban_fields)
     let fieldsArray = JSON.parse(normalized)
     
-    // Ensure city is included
-    if (!fieldsArray.includes('city')) {
-      fieldsArray.push('city')
-    }
+    // Remove existing required fields to avoid duplicates
+    const requiredFields = ['organization', 'mobile_no', 'city']
+    fieldsArray = fieldsArray.filter(field => !requiredFields.includes(field))
+    
+    // Add required fields in the correct order: organization, mobile_no, city
+    fieldsArray.push(...requiredFields)
     
     // Convert back to JSON string format (backend expects JSON)
     kanban_fields = JSON.stringify(fieldsArray)
@@ -557,7 +561,8 @@ function getParams() {
   // kanban_fields is already normalized above, just use it directly
   let final_kanban_fields = kanban_fields
   
-  return {
+  // Build params object
+  let params = {
     doctype: props.doctype,
     filters: filters,
     order_by: order_by,
@@ -576,6 +581,13 @@ function getParams() {
     page_length: pageLength.value,
     page_length_count: pageLengthCount.value,
   }
+  
+  // Preserve txt parameter from existing params if it exists (for search)
+  if (list.value?.params?.txt) {
+    params.txt = list.value.params.txt
+  }
+  
+  return params
 }
 
 list.value = createResource({
@@ -1048,25 +1060,39 @@ async function updateKanbanSettings(data) {
   }
 }
 
-function loadMoreKanban(columnName) {
-  let columns = list.value.data.kanban_columns || '[]'
+async function loadMoreKanban(columnName) {
+  try {
+    let columns = list.value.data.kanban_columns || '[]'
 
-  if (typeof columns === 'string') {
-    columns = JSON.parse(columns)
+    if (typeof columns === 'string') {
+      columns = JSON.parse(columns)
+    }
+
+    let column = columns.find((c) => c.name == columnName)
+    
+    if (!column) {
+      console.warn(`Column ${columnName} not found`)
+      return
+    }
+
+    // Increment page length for this column
+    if (!column.page_length) {
+      column.page_length = 40
+    } else {
+      column.page_length += 20
+    }
+    
+    list.value.params.kanban_columns = columns
+    view.value.kanban_columns = columns
+    
+    // Reload and wait for completion
+    await list.value.reload()
+    
+    return Promise.resolve()
+  } catch (error) {
+    console.error('Error loading more kanban items:', error)
+    return Promise.reject(error)
   }
-
-  let column = columns.find((c) => c.name == columnName)
-
-  if (!column.page_length) {
-    column.page_length = 40
-  } else {
-    column.page_length += 20
-  }
-  list.value.params.kanban_columns = columns
-  view.value.kanban_columns = columns
-  
-  // Reload - loading state will be managed by KanbanView component
-  return list.value.reload()
 }
 
 function createOrUpdateStandardView() {

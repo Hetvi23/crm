@@ -23,24 +23,78 @@
       />
     </template>
   </LayoutHeader>
-  <div class="px-5 py-3" style="background-color: #FFFFFF; border-bottom: 1px solid #DADDE1;">
-    <div class="flex items-center gap-2">
+  <!-- Search Bar and Controls - Meta Style -->
+  <div class="px-5 py-3" style="background-color: #FFFFFF; border-bottom: 1px solid #E4E6EA;">
+    <div class="flex items-center gap-3 flex-wrap">
       <TextInput
         v-model="searchQuery"
         :placeholder="__('Search leads by name, email, mobile number, or company...')"
-        class="flex-1 max-w-md"
+        class="flex-1 min-w-[300px] max-w-md search-input-leads"
+        style="font-size: 15px; font-weight: 400; line-height: 1.3333; border-radius: 20px; background-color: #F0F2F5; border: none; padding: 8px 16px; outline: none; box-shadow: none;"
         @input="handleSearch"
       >
         <template #prefix>
-          <FeatherIcon name="search" class="h-4 w-4 text-ink-gray-5" />
+          <FeatherIcon name="search" class="h-4 w-4" style="color: #65676B;" />
         </template>
       </TextInput>
       <Button
         v-if="searchQuery"
         variant="ghost"
         icon="x"
+        size="sm"
         @click="clearSearch"
+        style="padding: 6px; font-size: 15px;"
+        class="hover:bg-surface-gray-2"
       />
+      
+      <!-- Filter, Refresh, and Settings Buttons -->
+      <div class="flex items-center gap-2">
+        <Button
+          :tooltip="__('Refresh')"
+          :icon="RefreshIcon"
+          :loading="viewControlsList?.loading"
+          @click="viewControls?.reload()"
+          variant="ghost"
+          size="sm"
+          style="padding: 6px; font-size: 15px;"
+          class="hover:bg-surface-gray-2"
+        />
+        <Filter
+          v-if="viewControlsList"
+          v-model="viewControlsList"
+          :doctype="'CRM Lead'"
+          :default_filters="{ converted: 0 }"
+          @update="viewControls?.updateFilter"
+        />
+        <KanbanSettings
+          v-if="viewControlsList && route.params.viewType === 'kanban'"
+          v-model="viewControlsList"
+          doctype="CRM Lead"
+          @update="viewControls?.updateKanbanSettings"
+        />
+        
+        <!-- Toggle buttons for kanban view only -->
+        <template v-if="route.params.viewType === 'kanban'">
+          <div class="flex items-center gap-2 px-2 border-l" style="border-color: #E4E6EA;">
+            <Button
+              :variant="showNotQualified ? 'solid' : 'outline'"
+              size="sm"
+              :label="__('Show Not Qualified')"
+              @click="showNotQualified = !showNotQualified"
+              style="font-size: 13px; padding: 6px 12px; height: 32px; border-radius: 6px; font-weight: 500;"
+              :class="showNotQualified ? 'bg-[#1877F2] text-white hover:bg-[#166FE5]' : 'border-[#E4E6EA] text-[#050505] hover:bg-[#F0F2F5]'"
+            />
+            <Button
+              :variant="showLostLeads ? 'solid' : 'outline'"
+              size="sm"
+              :label="__('Show Lost Leads')"
+              @click="showLostLeads = !showLostLeads"
+              style="font-size: 13px; padding: 6px 12px; height: 32px; border-radius: 6px; font-weight: 500;"
+              :class="showLostLeads ? 'bg-[#1877F2] text-white hover:bg-[#166FE5]' : 'border-[#E4E6EA] text-[#050505] hover:bg-[#F0F2F5]'"
+            />
+          </div>
+        </template>
+      </div>
     </div>
   </div>
   <ViewControls
@@ -53,11 +107,12 @@
     :filters="{ converted: 0 }"
     :options="{
       allowedViews: ['list', 'group_by', 'kanban'],
+      hideActionButtons: true,
     }"
   />
   <KanbanView
     v-if="route.params.viewType == 'kanban'"
-    v-model="leads"
+    v-model="filteredLeads"
     :options="{
       onClick: (row) => showLeadDetails(row.name),
       onNewClick: (column) => onNewClick(column),
@@ -108,7 +163,7 @@
           />
         </div>
         <div v-else-if="titleField === 'mobile_no'">
-          <PhoneIcon class="h-4 w-4" />
+          <PhoneIcon class="h-4 w-4" style="color: #65676B;" />
         </div>
         <div
           v-if="
@@ -120,13 +175,14 @@
               'response_by',
             ].includes(titleField)
           "
-          class="truncate text-base"
+          class="truncate"
+          style="color: #050505; font-size: 15px; font-weight: 600; line-height: 1.3333;"
         >
           <Tooltip :text="getRow(itemName, titleField).label">
             <div>{{ getRow(itemName, titleField).timeAgo }}</div>
           </Tooltip>
         </div>
-        <div v-else-if="titleField === 'sla_status'" class="truncate text-base">
+        <div v-else-if="titleField === 'sla_status'" class="truncate">
           <Badge
             v-if="getRow(itemName, titleField).value"
             :variant="'subtle'"
@@ -137,32 +193,65 @@
         </div>
         <div
           v-else-if="getRow(itemName, titleField).label"
-          class="truncate text-base"
+          class="truncate font-semibold"
+          style="color: #050505; font-size: 15px; font-weight: 600; line-height: 1.3333; letter-spacing: -0.01em;"
         >
           {{ getRow(itemName, titleField).label }}
         </div>
-        <div class="text-ink-gray-4" v-else>{{ __('No Title') }}</div>
+        <div 
+          class="truncate" 
+          v-else
+          style="color: #65676B; font-size: 15px; font-weight: 400; line-height: 1.3333;"
+        >
+          {{ __('No Title') }}
+        </div>
       </div>
     </template>
     <template #fields="{ fieldName, itemName }">
       <div
-        v-if="getRow(itemName, fieldName).label"
-        class="truncate flex items-center gap-2"
+        v-if="getRow(itemName, fieldName).label || getRow(itemName, fieldName).value || (fieldName === 'organization' && getRow(itemName, fieldName)) || (fieldName === 'mobile_no' && getRow(itemName, fieldName)) || (fieldName === 'city' && getRow(itemName, fieldName))"
+        class="flex items-center gap-2 min-w-0"
       >
         <div v-if="fieldName === 'status'">
           <IndicatorIcon :class="getRow(itemName, fieldName).color" />
         </div>
-        <div
-          v-else-if="
-            fieldName === 'organization' && getRow(itemName, fieldName).label
-          "
-        >
-          <Avatar
-            class="flex items-center"
-            :image="getRow(itemName, fieldName).logo"
-            :label="getRow(itemName, fieldName).label"
-            size="xs"
-          />
+        <!-- Organization - show with icon if available, otherwise as text - Meta Style (No Border) -->
+        <div v-else-if="fieldName === 'organization'" class="flex items-center gap-1.5 min-w-0 flex-1">
+          <div v-if="getRow(itemName, fieldName).logo" class="flex items-center flex-shrink-0">
+            <Avatar
+              class="flex items-center"
+              :image="getRow(itemName, fieldName).logo"
+              :label="getRow(itemName, fieldName).label || getRow(itemName, fieldName)"
+              size="xs"
+            />
+          </div>
+          <span 
+            v-else 
+            class="truncate kanban-card-field"
+            style="color: #050505; font-size: 15px; font-weight: 400; line-height: 1.3333; border: none; outline: none; background: transparent; padding: 0; box-shadow: none;"
+          >
+            {{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}
+          </span>
+        </div>
+        <!-- Phone (mobile_no) - show with phone icon - Meta Style (No Border) -->
+        <div v-else-if="fieldName === 'mobile_no'" class="flex items-center gap-1.5 min-w-0 flex-1">
+          <FeatherIcon name="phone" class="h-4 w-4 flex-shrink-0" style="color: #65676B;" />
+          <span 
+            class="truncate kanban-card-field"
+            style="color: #050505; font-size: 15px; font-weight: 400; line-height: 1.3333; border: none; outline: none; background: transparent; padding: 0; box-shadow: none;"
+          >
+            {{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}
+          </span>
+        </div>
+        <!-- City - show with map-pin icon - Meta Style (No Border) -->
+        <div v-else-if="fieldName === 'city'" class="flex items-center gap-1.5 min-w-0 flex-1">
+          <FeatherIcon name="map-pin" class="h-4 w-4 flex-shrink-0" style="color: #65676B;" />
+          <span 
+            class="truncate kanban-card-field-secondary"
+            style="color: #65676B; font-size: 15px; font-weight: 400; line-height: 1.3333; border: none; outline: none; background: transparent; padding: 0; box-shadow: none;"
+          >
+            {{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}
+          </span>
         </div>
         <div v-else-if="fieldName === 'lead_name'">
           <Avatar
@@ -183,7 +272,7 @@
           />
         </div>
         <div
-          v-if="
+          v-else-if="
             [
               'modified',
               'creation',
@@ -192,13 +281,14 @@
               'response_by',
             ].includes(fieldName)
           "
-          class="truncate text-base"
+          class="truncate"
+          style="color: #65676B; font-size: 15px; font-weight: 400; line-height: 1.3333;"
         >
           <Tooltip :text="getRow(itemName, fieldName).label">
             <div>{{ getRow(itemName, fieldName).timeAgo }}</div>
           </Tooltip>
         </div>
-        <div v-else-if="fieldName === 'sla_status'" class="truncate text-base">
+        <div v-else-if="fieldName === 'sla_status'" class="truncate">
           <Badge
             v-if="getRow(itemName, fieldName).value"
             :variant="'subtle'"
@@ -213,22 +303,20 @@
             size="xs"
           />
         </div>
-        <div v-else-if="fieldName === 'city'" class="flex items-center gap-1.5">
-          <FeatherIcon name="map-pin" class="h-3.5 w-3.5 flex-shrink-0" style="color: #65676B;" />
-          <span class="text-sm leading-5" style="color: #65676B;">{{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}</span>
+        <div v-else-if="fieldName === 'email'" class="flex items-center gap-1.5 min-w-0 flex-1">
+          <FeatherIcon name="mail" class="h-4 w-4 flex-shrink-0" style="color: #65676B;" />
+          <span 
+            class="truncate kanban-card-field"
+            style="color: #050505; font-size: 15px; font-weight: 400; line-height: 1.3333; border: none; outline: none; background: transparent; padding: 0; box-shadow: none;"
+          >
+            {{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}
+          </span>
         </div>
-        <div v-else-if="fieldName === 'mobile_no'" class="flex items-center gap-1.5">
-          <FeatherIcon name="phone" class="h-3.5 w-3.5 flex-shrink-0" style="color: #65676B;" />
-          <span class="text-sm leading-5" style="color: #050505;">{{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}</span>
-        </div>
-        <div v-else-if="fieldName === 'email'" class="flex items-center gap-1.5">
-          <FeatherIcon name="mail" class="h-3.5 w-3.5 flex-shrink-0" style="color: #65676B;" />
-          <span class="text-sm leading-5 truncate" style="color: #050505;">{{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}</span>
-        </div>
-        <div v-else-if="fieldName === 'organization'" class="text-sm leading-5" style="color: #050505;">
-          {{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}
-        </div>
-        <div v-else class="text-sm leading-5" style="color: #050505;">
+        <div 
+          v-else 
+          class="truncate kanban-card-field"
+          style="color: #050505; font-size: 15px; font-weight: 400; line-height: 1.3333; border: none; outline: none; background: transparent; padding: 0; box-shadow: none;"
+        >
           {{ getRow(itemName, fieldName).label || getRow(itemName, fieldName) }}
         </div>
       </div>
@@ -237,25 +325,26 @@
       <div class="flex gap-2 items-center justify-between w-full" @click.stop.prevent>
         <Dropdown :options="getMoveToOptions(itemName, currentColumn)" placement="top-start">
           <template #default>
-        <Button
+            <Button
               variant="ghost" 
               size="sm"
               :label="__('Move to')"
               iconLeft="arrow-right"
               @click.stop.prevent
-              style="font-size: 13px; padding: 4px 8px; color: #1877F2; font-weight: 500;"
-              class="hover:bg-[#E7F3FF]"
-        />
+              style="font-size: 15px; padding: 6px 12px; color: #1877F2; font-weight: 600; height: 32px; border-radius: 6px;"
+              class="hover:bg-[#E7F3FF] transition-colors"
+            />
           </template>
         </Dropdown>
         <div class="flex gap-2">
-        <Button
-          variant="solid"
+          <Button
+            variant="solid"
             size="sm"
-          :label="__('Reminder')"
+            :label="__('Reminder')"
             @click.stop.prevent="openReminderModal(itemName)"
-            style="font-size: 13px; padding: 4px 12px; background-color: #1877F2;"
-        />
+            style="font-size: 15px; padding: 6px 16px; background-color: #1877F2; font-weight: 600; height: 32px; border-radius: 6px;"
+            class="transition-colors hover:bg-[#166FE5]"
+          />
         </div>
       </div>
     </template>
@@ -348,6 +437,9 @@ import TaskModal from '@/components/Modals/TaskModal.vue'
 import ReminderModal from '@/components/Modals/ReminderModal.vue'
 import LeadDetailsModal from '@/components/Modals/LeadDetailsModal.vue'
 import ViewControls from '@/components/ViewControls.vue'
+import Filter from '@/components/Filter.vue'
+import KanbanSettings from '@/components/Kanban/KanbanSettings.vue'
+import RefreshIcon from '@/components/Icons/RefreshIcon.vue'
 import { getMeta } from '@/stores/meta'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
@@ -370,6 +462,8 @@ const router = useRouter()
 const leadsListView = ref(null)
 const showLeadModal = ref(false)
 const searchQuery = ref('')
+const showNotQualified = ref(false)
+const showLostLeads = ref(false)
 
 const defaults = reactive({})
 
@@ -379,6 +473,50 @@ const loadMore = ref(1)
 const triggerResize = ref(1)
 const updatedPageCount = ref(20)
 const viewControls = ref(null)
+
+// Computed property to access the list from viewControls
+const viewControlsList = computed(() => {
+  return viewControls.value?.list
+})
+
+// Filtered leads for kanban view based on toggle states
+const filteredLeads = computed(() => {
+  if (!leads.value?.data || route.params.viewType !== 'kanban') {
+    return leads.value
+  }
+
+  // Create a deep copy to avoid mutating the original
+  const filtered = JSON.parse(JSON.stringify(leads.value))
+  
+  if (!filtered.data?.data) {
+    return filtered
+  }
+
+  // Filter columns based on toggle states
+  filtered.data.data = filtered.data.data.filter((column) => {
+    const columnName = column.column?.name
+    
+    if (!columnName) return true
+    
+    // Normalize column name for comparison (case-insensitive)
+    const normalizedName = columnName.toLowerCase().trim()
+    
+    // Hide "Not qualified" column unless toggle is on
+    if (normalizedName === 'not qualified' || normalizedName === 'notqualified') {
+      return showNotQualified.value
+    }
+    
+    // Hide "Lost" column unless toggle is on
+    if (normalizedName === 'lost') {
+      return showLostLeads.value
+    }
+    
+    // Show all other columns
+    return true
+  })
+
+  return filtered
+})
 
 function getRow(name, field) {
   function getValue(value) {
@@ -461,23 +599,11 @@ function parseRows(rows, columns = []) {
 
   return rows.map((lead) => {
     let _rows = {}
-    // Get base rows and always add city to ensure it's available for all leads
+    // Get base rows and always add required fields for kanban view
     const baseRows = leads.value?.data.rows || []
-    const allRows = [...baseRows, 'city'].filter((v, i, a) => a.indexOf(v) === i)
-    
-    // Always include city from lead data if it exists, even if not in baseRows
-    if (lead.city !== undefined && lead.city !== null && lead.city !== '') {
-      if (!allRows.includes('city')) {
-        allRows.push('city')
-      }
-    }
-    
-    // Always include city from lead data if it exists
-    if (lead.city !== undefined && lead.city !== null && lead.city !== '') {
-      if (!allRows.includes('city')) {
-        allRows.push('city')
-      }
-    }
+    // Ensure required fields for kanban cards are included: organization, mobile_no, city
+    const requiredKanbanFields = ['organization', 'mobile_no', 'city']
+    const allRows = [...baseRows, ...requiredKanbanFields].filter((v, i, a) => a.indexOf(v) === i)
     
     allRows.forEach((row) => {
       _rows[row] = lead[row]
@@ -719,8 +845,15 @@ function openReminderModal(itemName) {
 const showLeadDetailsModal = ref(false)
 
 function showLeadDetails(itemName) {
+  // Update the selected lead ID
   selectedLeadId.value = itemName
-  showLeadDetailsModal.value = true
+  // If sidebar is already open, just update the lead ID (will trigger reload)
+  // If sidebar is closed, open it
+  if (!showLeadDetailsModal.value) {
+    showLeadDetailsModal.value = true
+  }
+  // Note: If sidebar is already open, the LeadDetailsModal component's watch on leadId
+  // will automatically reload the data for the new lead
 }
 
 // Meta Leads Sync
@@ -775,7 +908,7 @@ function handleSearch() {
       return
     }
     
-    // Apply search using txt parameter for multi-field search
+    // Apply search using txt parameter - backend handles OR search across multiple fields
     const searchTerm = searchQuery.value.trim()
     if (viewControls.value && viewControls.value.list) {
       console.log('Applying search for:', searchTerm)
@@ -783,42 +916,17 @@ function handleSearch() {
       // Store search term
       currentSearchTerm.value = searchTerm
       
-      // Get current params or initialize
+      // Set txt parameter on the resource params - getParams() will preserve it
+      // The backend API will handle OR search across lead_name, first_name, last_name, email, mobile_no, phone, organization, name
       if (!viewControls.value.list.params) {
-        viewControls.value.list.params = {
-          doctype: 'CRM Lead',
-          filters: { converted: 0 },
-          order_by: 'modified desc',
-          default_filters: { converted: 0 },
-          view: {
-            custom_view_name: '',
-            view_type: route.params.viewType || 'list',
-            group_by_field: 'owner',
-          },
-          page_length: 20,
-          page_length_count: 20,
-        }
+        viewControls.value.list.params = {}
       }
       
-      // Use filters with OR condition to search across multiple fields including mobile_no
-      // This ensures mobile number is included in the search
-      // Frappe uses a specific format for OR conditions
-      viewControls.value.list.params.filters = [
-        ['converted', '=', 0],
-        ['', 'or', [
-          ['lead_name', 'like', `%${searchTerm}%`],
-          ['email', 'like', `%${searchTerm}%`],
-          ['mobile_no', 'like', `%${searchTerm}%`],
-          ['organization', 'like', `%${searchTerm}%`],
-        ]]
-      ]
-      
-      // Also add txt parameter as fallback for general search
       viewControls.value.list.params.txt = searchTerm
       
-      // Reload the list directly without using the reload() method
-      console.log('Reloading with search filters:', searchTerm)
-      viewControls.value.list.reload()
+      // Reload using ViewControls reload - it will preserve txt via getParams()
+      console.log('Reloading with search txt:', searchTerm)
+      viewControls.value.reload()
     } else {
       console.error('ViewControls or list not available')
     }
@@ -833,13 +941,12 @@ function clearSearch() {
   if (viewControls.value && viewControls.value.list) {
     console.log('Clearing search')
     
-    // Restore default filters and remove search parameters
+    // Remove txt parameter - getParams() won't include it anymore
     if (viewControls.value.list.params) {
-      viewControls.value.list.params.filters = { converted: 0 }
       delete viewControls.value.list.params.txt
     }
     
-    // Reload the list without search - use the exposed reload method
+    // Reload using ViewControls reload
     console.log('Reloading without search')
     viewControls.value.reload()
   } else {

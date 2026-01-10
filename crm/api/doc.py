@@ -512,6 +512,10 @@ def get_data(
 		# Always include city field for CRM Lead doctype in kanban view
 		if doctype == "CRM Lead" and "city" not in rows:
 			rows.append("city")
+		
+		# Always include creation field for kanban view to enable sorting by creation date (newest first)
+		if "creation" not in rows:
+			rows.append("creation")
 
 		# Build or_filters for text search in kanban view
 		or_filters = []
@@ -568,10 +572,28 @@ def get_data(
 					getCounts(d, doctype)
 
 			if order:
-				column_data = sorted(
-					column_data,
-					key=lambda x: order.index(x.get("name")) if x.get("name") in order else len(order),
+				# Sort so that new items (not in custom order) appear at top, sorted by creation desc (newest first)
+				# Then items in the custom order maintain their specified order
+				# Separate items into two groups: new items and ordered items
+				new_items = [x for x in column_data if x.get("name") not in order]
+				ordered_items = [x for x in column_data if x.get("name") in order]
+				
+				# Sort new items by creation date desc (newest first)
+				# Use reverse=True to get newest first, using creation or modified as fallback
+				new_items_sorted = sorted(
+					new_items,
+					key=lambda x: x.get("creation") or x.get("modified") or "2000-01-01 00:00:00",
+					reverse=True
 				)
+				
+				# Sort ordered items by their position in the order array
+				ordered_items_sorted = sorted(
+					ordered_items,
+					key=lambda x: order.index(x.get("name")) if x.get("name") in order else len(order)
+				)
+				
+				# Combine: new items first (newest at top), then ordered items
+				column_data = new_items_sorted + ordered_items_sorted
 
 			data.append({"column": kc, "fields": kanban_fields, "data": column_data})
 

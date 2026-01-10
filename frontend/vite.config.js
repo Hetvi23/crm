@@ -58,14 +58,38 @@ export default defineConfig(async ({ mode }) => {
       },
     },
     optimizeDeps: {
+      // Only optimize specific dependencies that need pre-bundling
       include: [
         'feather-icons',
-        'tailwind.config.js',
         'prosemirror-state',
         'prosemirror-view',
         'lowlight',
         'interactjs',
       ],
+      // Limit entry points to only source files - prevents scanning entire node_modules
+      entries: [
+        'index.html',
+        'src/**/*.{js,ts,jsx,tsx,vue}',
+      ],
+      // Exclude from optimization - let build handle it
+      exclude: [],
+    },
+    build: {
+      // Vite automatically only bundles what's imported from src
+      // It doesn't scan or build entire node_modules - only processes dependencies as needed
+      // Use esbuild for fastest minification (default)
+      minify: 'esbuild',
+      // Disable sourcemaps in production to speed up build significantly
+      // Sourcemap generation can be very slow and is only needed for debugging
+      sourcemap: false,
+      // Optimize build target
+      target: 'esnext',
+      // Reduce chunk size warning threshold
+      chunkSizeWarningLimit: 1000,
+      // Optimize build output
+      cssCodeSplit: true,
+      // Don't include unnecessary polyfills
+      assetsInlineLimit: 4096,
     },
     server: {
       fs: {
@@ -83,7 +107,9 @@ export default defineConfig(async ({ mode }) => {
       buildConfig: {
         indexHtmlPath: '../crm/www/crm.html',
         emptyOutDir: true,
-        sourcemap: true,
+        // Disable sourcemaps in production build to speed up build process
+        // Only generate sourcemaps in development
+        sourcemap: isDev,
       },
     }),
   )

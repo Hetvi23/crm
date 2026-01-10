@@ -159,4 +159,323 @@
     border-color: #1877F2;
     outline: none;
   }
+
+  /* Override dark backgrounds to white */
+  /* Avatar backgrounds - make them light grey/white instead of black */
+  [class*="avatar"], 
+  .avatar,
+  [data-avatar],
+  [class*="Avatar"] {
+    background-color: #E4E6EA !important;
+    color: #050505 !important;
+  }
+
+  /* Getting Started Banner - make background white */
+  [class*="getting-started"],
+  [class*="GettingStarted"],
+  [class*="onboarding"] {
+    background-color: #FFFFFF !important;
+    color: #050505 !important;
+  }
+
+  /* Top header/navigation - ensure white background */
+  header,
+  [role="banner"],
+  #app-header,
+  [class*="header"],
+  [class*="Header"] {
+    background-color: #FFFFFF !important;
+  }
+
+  /* Any dark grey/black backgrounds that should be white */
+  [style*="background-color: #000"],
+  [style*="background-color: #1a1a1a"],
+  [style*="background-color: #1A1A1A"],
+  [style*="background: #000"],
+  [style*="background: #1a1a1a"],
+  [style*="background: #1A1A1A"] {
+    background-color: #FFFFFF !important;
+  }
+
+  /* Override frappe-ui avatar dark backgrounds */
+  .frappe-avatar,
+  [class*="frappe-avatar"],
+  [class*="FrappeAvatar"] {
+    background-color: #E4E6EA !important;
+    color: #050505 !important;
+  }
+}
+
+/* Additional global overrides for dark backgrounds - outside layers for maximum specificity */
+/* Avatar circles on kanban cards and throughout the app */
+div[class*="avatar"]:not([style*="background-image"]),
+span[class*="avatar"]:not([style*="background-image"]),
+[class*="Avatar"]:not([style*="background-image"]) {
+  background-color: #E4E6EA !important;
+  color: #050505 !important;
+}
+
+/* Getting Started and Onboarding panels */
+[class*="getting-started"],
+[class*="GettingStarted"],
+[class*="onboarding"],
+[class*="Onboarding"],
+div[class*="banner"] {
+  background-color: #FFFFFF !important;
+  color: #050505 !important;
+}
+
+/* Ensure headers are white */
+header,
+[role="banner"],
+#app-header,
+#app-header > *,
+[class*="app-header"],
+[class*="AppHeader"] {
+  background-color: #FFFFFF !important;
+}
+
+/* Override any element with black/grey background colors */
+[style*="background-color: rgb(0, 0, 0)"],
+[style*="background-color: rgb(26, 26, 26)"],
+[style*="background-color: rgb(45, 45, 45)"],
+[style*="background: rgb(0, 0, 0)"],
+[style*="background: rgb(26, 26, 26)"],
+[style*="background: rgb(45, 45, 45)"] {
+  background-color: #FFFFFF !important;
+  background: #FFFFFF !important;
+}
+
+/* Kanban card avatars specifically */
+[class*="kanban"] [class*="avatar"],
+[class*="Kanban"] [class*="Avatar"] {
+  background-color: #E4E6EA !important;
+  color: #050505 !important;
+}
+
+/* Meta-style Kanban View Typography and Design */
+@layer components {
+  /* Kanban Column Headers - Meta Style */
+  .kanban-column-header {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.3333;
+    letter-spacing: -0.01em;
+    color: #050505;
+  }
+
+  /* Kanban Column Count Badge - Meta Style */
+  .kanban-column-count {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    color: #65676B;
+    background-color: #E4E6EA;
+  }
+
+  /* Kanban Card Title - Meta Style */
+  .kanban-card-title {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3333;
+    letter-spacing: -0.01em;
+    color: #050505;
+  }
+
+  /* Kanban Card Field - Meta Style (No Borders) */
+  .kanban-card-field {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.3333;
+    color: #050505;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Kanban Card Field Secondary - Meta Style (No Borders) */
+  .kanban-card-field-secondary {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.3333;
+    color: #65676B;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Remove any borders from Kanban card text fields - Ensure no pill-shaped containers */
+  [class*="kanban"] [class*="field"] span,
+  .kanban-card [class*="field"] span,
+  .kanban-card span:not([class*="avatar"]):not([class*="icon"]):not([class*="Badge"]) {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Ensure phone and city text fields have no borders */
+  [class*="mobile_no"] span,
+  [class*="city"] span,
+  .kanban-card [data-field*="mobile"] span,
+  .kanban-card [data-field*="city"] span {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Kanban Card - Meta Style */
+  .kanban-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E4E6EA;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+  }
+
+  .kanban-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Kanban Column - Meta Style */
+  .kanban-column {
+    background-color: #FFFFFF;
+    border: 1px solid #E4E6EA;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Empty State - Meta Style */
+  .kanban-empty-state-title {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.2941;
+    color: #050505;
+  }
+
+  .kanban-empty-state-description {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.3333;
+    color: #65676B;
+  }
+
+  /* Meta-style Kanban Board Container */
+  [class*="KanbanView"] > div:first-child,
+  .kanban-board-container {
+    background-color: #F0F2F5 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  /* Meta-style Kanban Column */
+  .kanban-column {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  /* Meta-style Button Sizing */
+  button[class*="Button"],
+  .btn {
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+  }
+
+  button[class*="Button"][size="sm"],
+  .btn-sm {
+    font-size: 15px !important;
+    padding: 6px 12px !important;
+    height: 32px !important;
+  }
+
+  /* Meta-style Input Fields */
+  input[type="text"],
+  input[type="search"],
+  textarea {
+    font-size: 15px !important;
+    font-weight: 400 !important;
+    line-height: 1.3333 !important;
+    color: #050505 !important;
+    outline: none !important;
+    border: none !important;
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 !important;
+    box-shadow: none !important;
+  }
+
+  input[type="text"]:focus,
+  input[type="search"]:focus,
+  textarea:focus {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  input[type="text"]::placeholder,
+  input[type="search"]::placeholder,
+  textarea::placeholder {
+    color: #65676B !important;
+    font-weight: 400 !important;
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 !important;
+  }
+
+  /* Remove text borders from TextInput component */
+  [class*="TextInput"] input,
+  [class*="text-input"] input,
+  input[class*="text-input"],
+  .search-input-leads input,
+  .search-input-leads {
+    outline: none !important;
+    border: none !important;
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 !important;
+    box-shadow: none !important;
+  }
+
+  [class*="TextInput"] input:focus,
+  [class*="text-input"] input:focus,
+  input[class*="text-input"]:focus,
+  .search-input-leads input:focus,
+  .search-input-leads:focus,
+  .search-input-leads:focus-within {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 !important;
+  }
+
+  /* Ensure no borders on text content inside inputs */
+  input[type="text"] *,
+  input[type="search"] *,
+  [class*="TextInput"] *,
+  .search-input-leads * {
+    text-shadow: none !important;
+    -webkit-text-stroke: 0 !important;
+    outline: none !important;
+  }
 }
